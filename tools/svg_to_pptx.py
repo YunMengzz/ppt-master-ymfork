@@ -684,8 +684,15 @@ def create_pptx_with_native_svg(
             print(f"  演讲备注: 已禁用")
         print()
     
-    # 创建临时目录
-    temp_dir = Path(tempfile.mkdtemp())
+    # 创建临时目录（允许通过环境变量指定可写目录以规避权限问题）
+    temp_env = os.environ.get("PPT_TEMP_DIR")
+    if temp_env:
+        temp_dir = Path(temp_env)
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        created_temp = False
+    else:
+        temp_dir = Path(tempfile.mkdtemp())
+        created_temp = True
     
     try:
         # 首先用 python-pptx 创建基础 PPTX
@@ -873,8 +880,9 @@ def create_pptx_with_native_svg(
         return success_count == len(svg_files)
         
     finally:
-        # 清理临时目录
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        # 清理临时目录（仅清理自动创建的临时目录）
+        if created_temp:
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def main():
